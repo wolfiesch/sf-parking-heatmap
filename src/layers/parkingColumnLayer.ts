@@ -40,15 +40,16 @@ function createHexGridLayer(blocks: BlockData[], slotIdx: number): Layer[] {
       elevationAggregation: "MEAN",
       radius: 20,
       extruded: true,
-      elevationScale: 8,
-      elevationRange: [0, 100],
+      elevationScale: 1,
+      elevationDomain: [0, 1],
+      elevationRange: [0, 80],
       colorRange: [
-        [34, 197, 94],
-        [34, 197, 94],
-        [234, 179, 8],
-        [239, 68, 68],
-        [220, 38, 38],
-        [180, 20, 20],
+        [34, 197, 94],   // 0%  - green
+        [34, 197, 94],   // 20% - green
+        [34, 197, 94],   // 40% - green (still available)
+        [234, 179, 8],   // 60% - yellow (moderate)
+        [239, 68, 68],   // 80% - red (difficult)
+        [180, 20, 20],   // 100% - deep red
       ],
       colorDomain: [0, 1],
       coverage: 0.85,
