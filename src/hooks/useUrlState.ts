@@ -129,13 +129,14 @@ export function getInitialUrlState(): UrlStateInitial {
   }
 
   if (p.lat != null && p.lng != null && p.z != null && !isNaN(p.lat) && !isNaN(p.lng) && !isNaN(p.z)) {
-    result.viewState = {
+    const vs: Partial<MapViewState> = {
       latitude: p.lat,
       longitude: p.lng,
       zoom: p.z,
-      pitch: p.p ?? 0,
-      bearing: p.b ?? 0,
     };
+    if (p.p != null && !isNaN(p.p)) vs.pitch = p.p;
+    if (p.b != null && !isNaN(p.b)) vs.bearing = p.b;
+    result.viewState = vs;
   }
 
   if (p.block) result.blockId = p.block;

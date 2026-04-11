@@ -23,9 +23,15 @@ function getZoomTier(zoom: number): ZoomTier {
 }
 
 export function useMapView(initialOverrides?: Partial<MapViewState>) {
+  const initialZoom = initialOverrides?.zoom ?? DEFAULT_VIEW.zoom;
+  const initialPitch =
+    initialOverrides?.pitch ??
+    (getZoomTier(initialZoom) !== "heatmap" ? 45 : 0);
+
   const [viewState, setViewState] = useState<MapViewState>({
     ...DEFAULT_VIEW,
     ...initialOverrides,
+    pitch: initialPitch,
   });
 
   // Track previous zoom tier for auto-pitch on tier crossing
