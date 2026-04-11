@@ -1,5 +1,25 @@
+# Dependencies
 node_modules
+
+# Build output
 dist
-.claude/
+
+# Editor / OS detritus
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Environment files
+.env
+.env.*
 *.local
+
+# Tooling-specific
+.claude/
 .vercel
+logs/
+
+# Heavy generated data (built locally; not committed)
+valhalla-data/
+public/data/isochrones/
