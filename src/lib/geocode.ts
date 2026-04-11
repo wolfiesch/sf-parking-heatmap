@@ -10,6 +10,19 @@ export interface GeoResult {
   type: string; // "house", "street", "city", etc.
 }
 
+interface PhotonProperties {
+  name?: string;
+  street?: string;
+  district?: string;
+  type?: string;
+  osm_value?: string;
+}
+
+interface PhotonFeature {
+  geometry: { coordinates: [number, number] };
+  properties: PhotonProperties;
+}
+
 const cache = new Map<string, GeoResult[]>();
 
 export async function geocode(query: string): Promise<GeoResult[]> {
@@ -28,14 +41,14 @@ export async function geocode(query: string): Promise<GeoResult[]> {
   const res = await fetch(`${PHOTON_URL}?${params}`);
   if (!res.ok) return [];
 
-  const data = await res.json();
+  const data = (await res.json()) as { features?: PhotonFeature[] };
   const results: GeoResult[] = (data.features ?? [])
-    .filter((f: any) => {
+    .filter((f) => {
       const [lng, lat] = f.geometry.coordinates;
       return lat >= SF_BBOX.south && lat <= SF_BBOX.north &&
              lng >= SF_BBOX.west && lng <= SF_BBOX.east;
     })
-    .map((f: any) => ({
+    .map((f) => ({
       name: buildDisplayName(f.properties),
       lat: f.geometry.coordinates[1],
       lng: f.geometry.coordinates[0],
@@ -46,7 +59,7 @@ export async function geocode(query: string): Promise<GeoResult[]> {
   return results;
 }
 
-function buildDisplayName(props: any): string {
+function buildDisplayName(props: PhotonProperties): string {
   const parts: string[] = [];
   if (props.name) parts.push(props.name);
   if (props.street && props.street !== props.name) parts.push(props.street);

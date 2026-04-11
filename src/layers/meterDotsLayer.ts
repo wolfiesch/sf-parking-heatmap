@@ -12,7 +12,6 @@ interface MeterDot {
 export function createMeterDotsLayer(
   blocks: BlockData[],
   timeSlot: TimeSlot,
-  _selectedBlockId: string | null,
 ) {
   const slotIdx = getTimeSlotIndex(timeSlot.dow, timeSlot.hour);
 

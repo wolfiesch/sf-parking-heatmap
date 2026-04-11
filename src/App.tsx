@@ -207,7 +207,7 @@ function App() {
       search.selectResult(result);
       flyTo(result.lng, result.lat, 15);
     },
-    [search.selectResult, flyTo],
+    [search, flyTo],
   );
 
   // Build extra layers for search radius + isochrones

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { Map } from "react-map-gl/maplibre";
 import { DeckGL } from "@deck.gl/react";
-import type { PickingInfo, MapViewState } from "deck.gl";
+import type { Layer, PickingInfo, MapViewState } from "deck.gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { BlockData, StationData, TimeSlot, ViewMode } from "../types";
@@ -41,7 +41,7 @@ interface ParkingMapProps {
   onViewStateChange: (vs: MapViewState) => void;
   onBlockClick: (block: BlockData | null) => void;
   onMapClick?: (coordinate: [number, number]) => void;
-  extraLayers?: any[];
+  extraLayers?: Layer[];
   comparing?: boolean;
   referenceSlot?: TimeSlot | null;
   columnStyle?: ColumnStyle;
@@ -87,7 +87,7 @@ export function ParkingMap({
 
   // Memoize layers so they aren't recreated on every pan/zoom frame
   const dataLayers = useMemo(() => {
-    const layers: any[] = [];
+    const layers: Layer[] = [];
 
     if (viewMode === "bike") {
       // Bike mode: heatmap at low zoom, scatter at mid+
@@ -136,7 +136,7 @@ export function ParkingMap({
 
     // Add individual meter dots at deep zoom
     if (showMeterDots) {
-      layers.push(createMeterDotsLayer(blocks, timeSlot, selectedBlockId));
+      layers.push(createMeterDotsLayer(blocks, timeSlot));
     }
 
     return layers;
