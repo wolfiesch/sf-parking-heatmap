@@ -1,0 +1,15 @@
+services:
+  valhalla:
+    image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
+    container_name: valhalla-sf
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./valhalla-data:/custom_files
+    environment:
+      - tile_urls=https://download.geofabrik.de/north-america/us/california-latest.osm.pbf
+      - serve_tiles=True
+      - build_elevation=False
+      - build_admins=True
+      - build_time_zones=True
+    restart: unless-stopped

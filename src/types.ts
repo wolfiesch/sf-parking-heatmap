@@ -54,4 +54,64 @@ export interface PlaybackState {
   speed: number; // ms per step
 }
 
+/** Transport modes for isochrone visualization */
+export type TransportMode = "driving" | "cycling" | "walking";
+
+/** A grid point used as an isochrone origin */
+export interface IsochroneOrigin {
+  id: number;
+  lat: number;
+  lng: number;
+}
+
+/** GeoJSON polygon contour for a single time threshold */
+export interface IsochroneContour {
+  minutes: number;
+  geometry: GeoJSON.Polygon | GeoJSON.MultiPolygon;
+}
+
+/** Isochrone data for one grid point across all speed profiles */
+export interface IsochroneSet {
+  grid: IsochroneOrigin[];
+  profileMap: number[]; // 168 entries: slot index -> profile index (0-5)
+  isochrones: Record<
+    string, // grid point ID
+    Record<
+      string, // profile index
+      Record<string, GeoJSON.Feature> // minutes -> GeoJSON Feature
+    >
+  >;
+}
+
+/** Isochrone interaction state */
+export interface IsochroneState {
+  isActive: boolean;
+  origin: IsochroneOrigin | null;
+  mode: TransportMode;
+  maxMinutes: number; // max travel time to show (2-20, controls how many bands visible)
+}
+
+/** Bay Wheels bike share station with typical-week demand profile */
+export interface StationData {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  capacity: number;
+  /** 168-element departure demand array (0-1, peak=1.0), indexed as (dow * 24 + hour) */
+  slots: number[];
+  /** 168-element arrival demand array (0-1, peak=1.0) */
+  arrivals: number[];
+}
+
+/** Pre-computed bike share data loaded from bike_week.json */
+export interface BikeWeekData {
+  generated: string;
+  dateRange: { from: string; to: string };
+  stations: StationData[];
+}
+
+/** Active visualization mode */
+export type ViewMode = "parking" | "bike" | "correlation";
+
 export type { MapViewState };

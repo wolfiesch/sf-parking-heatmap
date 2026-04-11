@@ -20,6 +20,16 @@ interface UrlParams {
   cmp: number | null;
   rdow: number | null;
   rhour: number | null;
+  // Isochrone params
+  iso: number | null;
+  imode: string | null;
+  ilat: number | null;
+  ilng: number | null;
+  imax: number | null;
+  // View mode (parking/bike/correlation)
+  vm: string | null;
+  // Selected station (bike mode)
+  station: string | null;
 }
 
 function parseHash(): Partial<UrlParams> {
@@ -46,6 +56,13 @@ function parseHash(): Partial<UrlParams> {
       case "cmp": params.cmp = parseInt(val); break;
       case "rdow": params.rdow = parseInt(val); break;
       case "rhour": params.rhour = parseInt(val); break;
+      case "iso": params.iso = parseInt(val); break;
+      case "imode": params.imode = val; break;
+      case "ilat": params.ilat = parseFloat(val); break;
+      case "ilng": params.ilng = parseFloat(val); break;
+      case "imax": params.imax = parseInt(val); break;
+      case "vm": params.vm = val; break;
+      case "station": params.station = decodeURIComponent(val); break;
     }
   }
   return params;
@@ -71,6 +88,15 @@ function buildHash(params: UrlParams): string {
     if (params.rdow != null) parts.push(`rdow=${params.rdow}`);
     if (params.rhour != null) parts.push(`rhour=${params.rhour}`);
   }
+  if (params.iso === 1) {
+    parts.push(`iso=1`);
+    if (params.imode) parts.push(`imode=${params.imode}`);
+    if (params.ilat != null) parts.push(`ilat=${params.ilat.toFixed(5)}`);
+    if (params.ilng != null) parts.push(`ilng=${params.ilng.toFixed(5)}`);
+    if (params.imax != null && params.imax !== 20) parts.push(`imax=${params.imax}`);
+  }
+  if (params.vm && params.vm !== "p") parts.push(`vm=${params.vm}`);
+  if (params.station) parts.push(`station=${encodeURIComponent(params.station)}`);
   return "#" + parts.join("&");
 }
 
@@ -84,6 +110,13 @@ export interface UrlStateInitial {
   comparing?: boolean;
   refDow?: number | null;
   refHour?: number | null;
+  isoActive?: boolean;
+  isoMode?: string | null;
+  isoLat?: number | null;
+  isoLng?: number | null;
+  isoMaxMinutes?: number | null;
+  viewMode?: string | null;
+  stationId?: string | null;
 }
 
 /** Parse initial state from URL on mount */
@@ -119,6 +152,24 @@ export function getInitialUrlState(): UrlStateInitial {
     result.refHour = p.rhour ?? null;
   }
 
+  if (p.iso === 1) {
+    result.isoActive = true;
+    result.isoMode = p.imode ?? "driving";
+    if (p.ilat != null && p.ilng != null && !isNaN(p.ilat) && !isNaN(p.ilng)) {
+      result.isoLat = p.ilat;
+      result.isoLng = p.ilng;
+    }
+    if (p.imax != null && !isNaN(p.imax)) {
+      result.isoMaxMinutes = p.imax;
+    }
+  }
+
+  if (p.vm) {
+    const vmMap: Record<string, string> = { p: "parking", b: "bike", c: "correlation" };
+    result.viewMode = vmMap[p.vm] ?? "parking";
+  }
+  if (p.station) result.stationId = p.station;
+
   return result;
 }
 
@@ -133,6 +184,13 @@ interface UrlSyncState {
   comparing?: boolean;
   refDow?: number | null;
   refHour?: number | null;
+  isoActive?: boolean;
+  isoMode?: string | null;
+  isoLat?: number | null;
+  isoLng?: number | null;
+  isoMaxMinutes?: number | null;
+  viewMode?: string | null;
+  selectedStationId?: string | null;
 }
 
 /**
@@ -160,6 +218,15 @@ export function useUrlSync(state: UrlSyncState) {
       cmp: state.comparing ? 1 : null,
       rdow: state.refDow ?? null,
       rhour: state.refHour ?? null,
+      iso: state.isoActive ? 1 : null,
+      imode: state.isoMode ?? null,
+      ilat: state.isoLat ?? null,
+      ilng: state.isoLng ?? null,
+      imax: state.isoMaxMinutes ?? null,
+      vm: state.viewMode
+        ? ({ parking: "p", bike: "b", correlation: "c" } as Record<string, string>)[state.viewMode] ?? null
+        : null,
+      station: state.selectedStationId ?? null,
     });
 
     if (hash === prevHashRef.current) return;
@@ -203,6 +270,12 @@ export function useUrlSync(state: UrlSyncState) {
     slat: state.searchLat,
     slng: state.searchLng,
     cmp: state.comparing,
+    iso: state.isoActive,
+    ilat: state.isoLat,
+    ilng: state.isoLng,
+    imax: state.isoMaxMinutes,
+    vm: state.viewMode,
+    station: state.selectedStationId,
   });
 
   useEffect(() => {
@@ -214,7 +287,13 @@ export function useUrlSync(state: UrlSyncState) {
       prev.block !== state.selectedBlockId ||
       prev.slat !== (state.searchLat ?? undefined) ||
       prev.slng !== (state.searchLng ?? undefined) ||
-      prev.cmp !== (state.comparing ?? undefined);
+      prev.cmp !== (state.comparing ?? undefined) ||
+      prev.iso !== (state.isoActive ?? undefined) ||
+      prev.ilat !== (state.isoLat ?? undefined) ||
+      prev.ilng !== (state.isoLng ?? undefined) ||
+      prev.imax !== (state.isoMaxMinutes ?? undefined) ||
+      prev.vm !== (state.viewMode ?? undefined) ||
+      prev.station !== (state.selectedStationId ?? undefined);
 
     if (changed) {
       prevDiscreteRef.current = {
@@ -224,11 +303,20 @@ export function useUrlSync(state: UrlSyncState) {
         slat: state.searchLat,
         slng: state.searchLng,
         cmp: state.comparing,
+        iso: state.isoActive,
+        ilat: state.isoLat,
+        ilng: state.isoLng,
+        imax: state.isoMaxMinutes,
+        vm: state.viewMode,
+        station: state.selectedStationId,
       };
       writeUrl(true);
     }
   }, [state.timeSlot.dow, state.timeSlot.hour, state.selectedBlockId,
-      state.searchLat, state.searchLng, state.comparing, writeUrl, state.isPlaying]);
+      state.searchLat, state.searchLng, state.comparing,
+      state.isoActive, state.isoLat, state.isoLng, state.isoMaxMinutes,
+      state.viewMode, state.selectedStationId,
+      writeUrl, state.isPlaying]);
 
   // Handle popstate (browser back/forward)
   useEffect(() => {

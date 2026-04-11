@@ -1,19 +1,27 @@
 import { occupancyToCss } from "../lib/colors";
+import { demandToCss } from "../lib/bikeColors";
 import { dayName, formatHour, formatOccupancy } from "../lib/format";
-import type { TimeSlot } from "../types";
+import type { TimeSlot, ViewMode } from "../types";
 
 interface WeekHeatmapProps {
   cityAverages: Float32Array;
   cityEnforcedFraction: Float32Array;
   timeSlot: TimeSlot;
   onCellClick: (dow: number, hour: number) => void;
+  viewMode?: ViewMode;
+  bikeCityAverages?: Float32Array;
 }
 
-export function WeekHeatmap({ cityAverages, cityEnforcedFraction, timeSlot, onCellClick }: WeekHeatmapProps) {
+export function WeekHeatmap({ cityAverages, cityEnforcedFraction, timeSlot, onCellClick, viewMode = "parking", bikeCityAverages }: WeekHeatmapProps) {
+  const isBikeMode = viewMode === "bike" || viewMode === "correlation";
+  const averages = isBikeMode && bikeCityAverages ? bikeCityAverages : cityAverages;
+  const label = isBikeMode ? "Bike Demand Pattern" : "Weekly Pattern";
+  const borderColor = isBikeMode ? "border-teal-800/50" : "border-gray-800/50";
+
   return (
-    <div className="absolute bottom-28 left-4 z-20 rounded-xl bg-gray-950/85 backdrop-blur-md border border-gray-800/50 p-3">
-      <p className="text-[10px] text-gray-400 mb-1.5 font-medium uppercase tracking-wider">
-        Weekly Pattern
+    <div className={`absolute bottom-28 left-4 z-20 rounded-xl bg-gray-950/85 backdrop-blur-md border ${borderColor} p-3`}>
+      <p className={`text-[10px] mb-1.5 font-medium uppercase tracking-wider ${isBikeMode ? "text-teal-400" : "text-gray-400"}`}>
+        {label}
       </p>
 
       <div className="flex gap-px">
@@ -44,10 +52,24 @@ export function WeekHeatmap({ cityAverages, cityEnforcedFraction, timeSlot, onCe
 
               {Array.from({ length: 7 }, (_, dow) => {
                 const idx = dow * 24 + hour;
-                const occ = cityAverages[idx];
+                const val = averages[idx];
                 const enfFrac = cityEnforcedFraction[idx];
                 const mostlyNotEnforced = enfFrac < 0.5;
                 const isSelected = dow === timeSlot.dow && hour === timeSlot.hour;
+
+                const bgColor = isBikeMode
+                  ? val > 0
+                    ? demandToCss(val)
+                    : "rgba(255,255,255,0.04)"
+                  : mostlyNotEnforced && val <= 0
+                    ? "rgba(59, 130, 246, 0.35)"
+                    : val > 0
+                      ? occupancyToCss(val, !mostlyNotEnforced)
+                      : "rgba(255,255,255,0.04)";
+
+                const titleText = isBikeMode
+                  ? `${dayName(dow)} ${formatHour(hour)}: ${val > 0 ? Math.round(val * 100) + "%" : "N/A"}`
+                  : `${dayName(dow)} ${formatHour(hour)}: ${formatOccupancy(val, !mostlyNotEnforced)}`;
 
                 return (
                   <button
@@ -55,18 +77,13 @@ export function WeekHeatmap({ cityAverages, cityEnforcedFraction, timeSlot, onCe
                     onClick={() => onCellClick(dow, hour)}
                     className="w-[10px] h-[10px] rounded-[2px] transition-all cursor-pointer hover:ring-1 hover:ring-white/30"
                     style={{
-                      backgroundColor:
-                        mostlyNotEnforced && occ <= 0
-                          ? "rgba(59, 130, 246, 0.35)"
-                          : occ > 0
-                            ? occupancyToCss(occ, !mostlyNotEnforced)
-                            : "rgba(255,255,255,0.04)",
-                      opacity: occ > 0 || mostlyNotEnforced ? 0.8 : 0.3,
+                      backgroundColor: bgColor,
+                      opacity: val > 0 || (!isBikeMode && mostlyNotEnforced) ? 0.8 : 0.3,
                       outline: isSelected ? "1.5px solid white" : "none",
                       outlineOffset: "-0.5px",
                     }}
-                    title={`${dayName(dow)} ${formatHour(hour)}: ${formatOccupancy(occ, !mostlyNotEnforced)}`}
-                    aria-label={`${dayName(dow)} ${formatHour(hour)}: ${formatOccupancy(occ, !mostlyNotEnforced)}`}
+                    title={titleText}
+                    aria-label={titleText}
                   />
                 );
               })}

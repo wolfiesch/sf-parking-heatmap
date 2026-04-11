@@ -1,6 +1,8 @@
 import { occupancyToCss } from "../lib/colors";
 import { deltaToCss } from "../lib/deltaColors";
+import { demandToCss, correlationToCss } from "../lib/bikeColors";
 import type { ColumnStyle } from "../layers/parkingColumnLayer";
+import type { TransportMode, ViewMode } from "../types";
 
 const STYLE_LABELS: Record<ColumnStyle, string> = {
   hexgrid: "Hex Grid",
@@ -15,11 +17,26 @@ interface LegendProps {
   comparing?: boolean;
   columnStyle?: ColumnStyle;
   onColumnStyleChange?: (style: ColumnStyle) => void;
+  isochroneActive?: boolean;
+  isochroneMode?: TransportMode;
+  viewMode?: ViewMode;
 }
 
-export function Legend({ is3D, comparing, columnStyle, onColumnStyleChange }: LegendProps) {
+export function Legend({ is3D, comparing, columnStyle, onColumnStyleChange, isochroneActive, isochroneMode, viewMode }: LegendProps) {
+  if (viewMode === "bike") {
+    return <BikeLegend />;
+  }
+
+  if (viewMode === "correlation") {
+    return <CorrelationLegend />;
+  }
+
   if (comparing) {
     return <DeltaLegend is3D={is3D} />;
+  }
+
+  if (isochroneActive && isochroneMode) {
+    return <IsochroneLegend mode={isochroneMode} />;
   }
 
   // Generate gradient stops
@@ -142,6 +159,131 @@ function DeltaLegend({ is3D }: { is3D?: boolean }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+import { legendGradientCss, modeAccentCss } from "../lib/isochroneColors";
+
+const ISO_MODE_LABELS: Record<TransportMode, string> = {
+  driving: "Driving",
+  cycling: "Cycling",
+  walking: "Walking",
+};
+
+function IsochroneLegend({ mode }: { mode: TransportMode }) {
+  const label = ISO_MODE_LABELS[mode];
+  const accent = modeAccentCss(mode);
+  const gradient = legendGradientCss(mode);
+
+  return (
+    <div className="absolute bottom-28 right-4 z-20 rounded-xl bg-gray-950/80 backdrop-blur-md px-3 py-2.5 border border-gray-800/50">
+      <p
+        className="text-[10px] mb-1.5 font-medium uppercase tracking-wider"
+        style={{ color: accent }}
+      >
+        {label} Isochrone
+      </p>
+
+      {/* Smooth gradient bar matching the map visualization */}
+      <div
+        className="h-2.5 w-36 rounded-full"
+        style={{ background: gradient }}
+      />
+      <div className="flex justify-between mt-1 text-[10px] text-gray-500 tabular-nums">
+        <span>2 min</span>
+        <span>10</span>
+        <span>20</span>
+      </div>
+      <div className="flex justify-between mt-0.5 text-[9px]">
+        <span style={{ color: accent }}>Close</span>
+        <span className="text-gray-500">Reachable</span>
+        <span className="text-gray-600">Far</span>
+      </div>
+
+      <div className="mt-2 pt-2 border-t border-gray-800/40">
+        <div className="flex items-center gap-1.5">
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: accent }}
+          />
+          <span className="text-[9px] text-gray-400">Origin point</span>
+        </div>
+        <p className="text-[9px] text-gray-500 mt-1">
+          Rings shrink during rush hours
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function BikeLegend() {
+  const stops = Array.from({ length: 20 }, (_, i) => {
+    const demand = i / 19;
+    return `${demandToCss(demand)} ${Math.round((i / 19) * 100)}%`;
+  });
+
+  return (
+    <div className="absolute bottom-28 right-4 z-20 rounded-xl bg-gray-950/80 backdrop-blur-md px-3 py-2.5 border border-teal-800/50">
+      <p className="text-[10px] text-teal-300 mb-1.5 font-medium uppercase tracking-wider">
+        Bike Demand
+      </p>
+      <div
+        className="h-2.5 w-36 rounded-full"
+        style={{
+          background: `linear-gradient(to right, ${stops.join(", ")})`,
+        }}
+      />
+      <div className="flex justify-between mt-1 text-[10px] text-gray-500">
+        <span>0%</span>
+        <span>30%</span>
+        <span>60%</span>
+        <span>100%</span>
+      </div>
+      <div className="flex justify-between mt-0.5 text-[9px]">
+        <span className="text-teal-300">Quiet</span>
+        <span className="text-teal-400">Moderate</span>
+        <span className="text-cyan-500">Peak</span>
+      </div>
+      <div className="mt-2 pt-2 border-t border-gray-800/40">
+        <p className="text-[9px] text-gray-500">
+          High demand = popular pickup = fewer bikes available
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function CorrelationLegend() {
+  const stops = Array.from({ length: 10 }, (_, i) => {
+    const score = i / 9;
+    return `${correlationToCss(score)} ${Math.round((i / 9) * 100)}%`;
+  });
+
+  return (
+    <div className="absolute bottom-28 right-4 z-20 rounded-xl bg-gray-950/80 backdrop-blur-md px-3 py-2.5 border border-green-800/50">
+      <p className="text-[10px] text-green-300 mb-1.5 font-medium uppercase tracking-wider">
+        Bike Alternative
+      </p>
+      <div
+        className="h-2.5 w-36 rounded-full"
+        style={{
+          background: `linear-gradient(to right, ${stops.join(", ")})`,
+        }}
+      />
+      <div className="flex justify-between mt-1 text-[10px] text-gray-500">
+        <span>Low</span>
+        <span>High</span>
+      </div>
+      <div className="flex justify-between mt-0.5 text-[9px]">
+        <span className="text-gray-400">No advantage</span>
+        <span className="text-green-400">Bike instead!</span>
+      </div>
+      <div className="mt-2 pt-2 border-t border-gray-800/40">
+        <p className="text-[9px] text-gray-500">
+          Green = parking hard + bikes available
+        </p>
+      </div>
     </div>
   );
 }

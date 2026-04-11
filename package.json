@@ -14,7 +14,11 @@
     "fetch-supply": "python3 scripts/fetch_parking_supply.py",
     "compute-paths": "python3 scripts/compute_block_paths.py",
     "aggregate": "python3 scripts/aggregate_parking.py",
-    "pipeline": "python3 scripts/fetch_meter_locations.py && python3 scripts/fetch_enforcement_schedules.py && python3 scripts/fetch_311_pressure.py && python3 scripts/compute_block_paths.py && python3 scripts/aggregate_parking.py"
+    "aggregate-bikes": "python3 scripts/aggregate_bike_trips.py",
+    "build-speed-profiles": "python3 scripts/build_speed_profiles.py",
+    "compute-isochrones": "python3 scripts/compute_isochrones.py",
+    "pipeline": "python3 scripts/fetch_meter_locations.py && python3 scripts/fetch_enforcement_schedules.py && python3 scripts/fetch_311_pressure.py && python3 scripts/compute_block_paths.py && python3 scripts/aggregate_parking.py",
+    "pipeline-full": "python3 scripts/fetch_meter_locations.py && python3 scripts/fetch_enforcement_schedules.py && python3 scripts/fetch_311_pressure.py && python3 scripts/compute_block_paths.py && python3 scripts/aggregate_parking.py && python3 scripts/build_speed_profiles.py && python3 scripts/compute_isochrones.py"
   },
   "dependencies": {
     "@deck.gl/aggregation-layers": "^9.2.11",
