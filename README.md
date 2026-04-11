@@ -5,7 +5,7 @@
 
 A temporal heatmap of San Francisco's metered parking. Pick any day-of-week and hour, and the map shows you typical occupancy across every metered block in the city — built from ~206M meter transactions pulled directly from the SF Open Data SODA API.
 
-**Live**: https://sf-parking-heatmap.vercel.app
+**Live**: https://sfparking.wolfie.gg
 
 ![SF Parking Heatmap](public/data/screenshot.jpg)
 
